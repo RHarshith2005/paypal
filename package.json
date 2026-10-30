@@ -1,0 +1,37 @@
+{
+  "name": "handshake",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Handshake — an open-source trust layer for agent-to-agent commerce, built for the PayPal AI Hackathon 2026.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @handshake/api --filter @handshake/web dev",
+    "dev:api": "pnpm --filter @handshake/api dev",
+    "dev:web": "pnpm --filter @handshake/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @handshake/api db:generate",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "^8.72.1"
+  },
+  "type": "module"
+}

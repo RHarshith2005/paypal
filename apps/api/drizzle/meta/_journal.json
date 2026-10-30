@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793371210608,
+      "tag": "0000_crypto_evidence",
+      "breakpoints": true
+    }
+  ]
+}

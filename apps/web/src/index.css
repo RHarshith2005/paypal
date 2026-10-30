@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: #070b12;
+    color: #e8edf5;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgb(52 211 153 / 0.28);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(52 211 153 / 0.75);
+    outline-offset: 2px;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+/* Faint technical grid behind the app shell. */
+.app-backdrop {
+  background-image:
+    radial-gradient(1100px 500px at 15% -10%, rgb(16 185 129 / 0.12), transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, rgb(56 189 248 / 0.08), transparent 55%),
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    48px 48px,
+    48px 48px;
+}
+
+.panel {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background-color: rgb(11 16 25 / 0.86);
+  border-radius: 1rem;
+  backdrop-filter: blur(6px);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(148 163 184);
+}
+
+/* AG Grid inherits transparent surfaces so the theme matches the panels. */
+.ag-root-wrapper {
+  border: 0;
+  background: transparent;
+}
+
+.ag-row-hover {
+  cursor: default;
+}
