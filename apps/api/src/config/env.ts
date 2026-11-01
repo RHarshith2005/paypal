@@ -57,7 +57,11 @@ const EnvSchema = z.object({
 
   CHANNEL3_ENABLED: z.enum(["true", "false"]).default("false"),
   CHANNEL3_API_KEY: optionalString,
-  CHANNEL3_API_BASE: z.url({ protocol: /^https$/ }).optional(),
+  // An empty value in .env means "not configured"; a real value must be https.
+  CHANNEL3_API_BASE: z
+    .union([z.literal(""), z.url({ protocol: /^https$/ })])
+    .optional()
+    .transform((value) => (value && value.length > 0 ? value : undefined)),
 
   SEED_DEMO_DATA: z.enum(["true", "false"]).default("true"),
 });
