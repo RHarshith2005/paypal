@@ -1,5 +1,5 @@
 CREATE TYPE "public"."agent_kind" AS ENUM('BUYER_AGENT', 'MERCHANT_AGENT', 'ARBITER');--> statement-breakpoint
-CREATE TYPE "public"."deal_status" AS ENUM('VALIDATED', 'HANDSHAKING', 'NEGOTIATING', 'AGREED', 'PAYING', 'RECEIPTED', 'COMPLETED', 'FAILED');--> statement-breakpoint
+CREATE TYPE "public"."deal_status" AS ENUM('CREATED', 'HANDSHAKE', 'NEGOTIATING', 'AGREED', 'PAID', 'RECEIPT_SIGNED', 'DISPUTED', 'RESOLVED', 'FAILED');--> statement-breakpoint
 CREATE TYPE "public"."dispute_status" AS ENUM('OPEN', 'RULED');--> statement-breakpoint
 CREATE TYPE "public"."ledger_entry_status" AS ENUM('RESERVED', 'SETTLED', 'VOIDED');--> statement-breakpoint
 CREATE TYPE "public"."message_kind" AS ENUM('HANDSHAKE', 'NEGOTIATION', 'TRANSCRIPT');--> statement-breakpoint
@@ -8,9 +8,37 @@ CREATE TABLE "agents" (
 	"kind" "agent_kind" NOT NULL,
 	"display_name" text NOT NULL,
 	"public_key" jsonb NOT NULL,
-	"attestation" jsonb NOT NULL,
+	"key_id" text NOT NULL,
+	"attestation" jsonb,
 	"private_key_pkcs8" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "attestations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"kind" text NOT NULL,
+	"subject_agent_id" text NOT NULL,
+	"body" jsonb NOT NULL,
+	"issued_at" timestamp with time zone NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"revoked_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "consumed_nonces" (
+	"nonce" text PRIMARY KEY NOT NULL,
+	"scope" text NOT NULL,
+	"deal_id" text,
+	"used_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "deal_events" (
+	"id" text PRIMARY KEY NOT NULL,
+	"deal_id" text NOT NULL,
+	"seq" integer NOT NULL,
+	"type" text NOT NULL,
+	"summary" text NOT NULL,
+	"data" jsonb NOT NULL,
+	"at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "deals" (
@@ -23,6 +51,11 @@ CREATE TABLE "deals" (
 	"agreed_offer" jsonb,
 	"policy" jsonb,
 	"payment" jsonb,
+	"handshake_result" jsonb,
+	"guard_decisions" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"misconfigured_agent" boolean DEFAULT false NOT NULL,
+	"hostile_merchant" boolean DEFAULT false NOT NULL,
+	"fulfillment_intent" text DEFAULT 'DELIVERED' NOT NULL,
 	"fulfillment" jsonb,
 	"injection_signals" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"failure" jsonb,
@@ -41,6 +74,14 @@ CREATE TABLE "disputes" (
 	"ruling" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"ruled_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "evidence_packets" (
+	"id" text PRIMARY KEY NOT NULL,
+	"dispute_id" text NOT NULL,
+	"deal_id" text NOT NULL,
+	"packet" jsonb NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "ledger_entries" (
@@ -83,6 +124,14 @@ CREATE TABLE "messages" (
 	"timestamp" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "principal_keys" (
+	"key_id" text PRIMARY KEY NOT NULL,
+	"principal_id" text NOT NULL,
+	"public_key" jsonb NOT NULL,
+	"private_key_pkcs8" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "receipts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"deal_id" text NOT NULL,
@@ -94,6 +143,13 @@ CREATE TABLE "receipts" (
 	"verified_at" timestamp with time zone
 );
 --> statement-breakpoint
+CREATE TABLE "trust_anchor_keys" (
+	"key_id" text PRIMARY KEY NOT NULL,
+	"public_key" jsonb NOT NULL,
+	"private_key_pkcs8" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "trust_scores" (
 	"agent_id" text PRIMARY KEY NOT NULL,
 	"score" integer NOT NULL,
@@ -102,10 +158,13 @@ CREATE TABLE "trust_scores" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "deal_events" ADD CONSTRAINT "deal_events_deal_id_deals_id_fk" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deals" ADD CONSTRAINT "deals_mandate_id_mandates_id_fk" FOREIGN KEY ("mandate_id") REFERENCES "public"."mandates"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deals" ADD CONSTRAINT "deals_buyer_agent_id_agents_id_fk" FOREIGN KEY ("buyer_agent_id") REFERENCES "public"."agents"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deals" ADD CONSTRAINT "deals_merchant_agent_id_agents_id_fk" FOREIGN KEY ("merchant_agent_id") REFERENCES "public"."agents"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "disputes" ADD CONSTRAINT "disputes_deal_id_deals_id_fk" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "evidence_packets" ADD CONSTRAINT "evidence_packets_dispute_id_disputes_id_fk" FOREIGN KEY ("dispute_id") REFERENCES "public"."disputes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "evidence_packets" ADD CONSTRAINT "evidence_packets_deal_id_deals_id_fk" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ledger_entries" ADD CONSTRAINT "ledger_entries_mandate_id_mandates_id_fk" FOREIGN KEY ("mandate_id") REFERENCES "public"."mandates"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ledger_entries" ADD CONSTRAINT "ledger_entries_deal_id_deals_id_fk" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "mandates" ADD CONSTRAINT "mandates_agent_id_agents_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."agents"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -113,10 +172,13 @@ ALTER TABLE "messages" ADD CONSTRAINT "messages_deal_id_deals_id_fk" FOREIGN KEY
 ALTER TABLE "receipts" ADD CONSTRAINT "receipts_deal_id_deals_id_fk" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trust_scores" ADD CONSTRAINT "trust_scores_agent_id_agents_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."agents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "agents_kind_idx" ON "agents" USING btree ("kind");--> statement-breakpoint
+CREATE INDEX "attestations_subject_idx" ON "attestations" USING btree ("subject_agent_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "deal_events_deal_seq_idx" ON "deal_events" USING btree ("deal_id","seq");--> statement-breakpoint
 CREATE INDEX "deals_mandate_idx" ON "deals" USING btree ("mandate_id");--> statement-breakpoint
 CREATE INDEX "deals_merchant_idx" ON "deals" USING btree ("merchant_agent_id");--> statement-breakpoint
 CREATE INDEX "disputes_deal_idx" ON "disputes" USING btree ("deal_id");--> statement-breakpoint
 CREATE INDEX "disputes_status_idx" ON "disputes" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "evidence_packets_deal_idx" ON "evidence_packets" USING btree ("deal_id");--> statement-breakpoint
 CREATE INDEX "ledger_mandate_idx" ON "ledger_entries" USING btree ("mandate_id");--> statement-breakpoint
 CREATE INDEX "ledger_deal_idx" ON "ledger_entries" USING btree ("deal_id");--> statement-breakpoint
 CREATE INDEX "mandates_agent_idx" ON "mandates" USING btree ("agent_id");--> statement-breakpoint

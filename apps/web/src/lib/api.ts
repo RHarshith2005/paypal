@@ -1,19 +1,39 @@
 import {
+  AgentTrustListSchema,
   ApiErrorSchema,
+  DealListResponseSchema,
+  DealRunResponseSchema,
   DealViewSchema,
-  DisputeSchema,
+  DemoResetResponseSchema,
+  DemoRunResponseSchema,
+  DisputeListSchema,
+  DisputeViewSchema,
   HealthSchema,
   LedgerListSchema,
+  MandateCreateRequestSchema,
   MandateListSchema,
+  MandateViewSchema,
+  type AgentTrustList,
+  type DealListResponse,
+  type DealRunResponse,
   type DealView,
-  type Dispute,
+  type DemoCase,
+  type DemoResetResponse,
+  type DemoRunResponse,
+  type DisputeList,
+  type DisputeView,
   type Health,
   type LedgerList,
+  type MandateCreateRequest,
   type MandateList,
+  type MandateView,
 } from "@handshake/shared";
 import type { z } from "zod";
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787").replace(/\/$/, "");
+
+/** Only needed when the API sets API_WRITE_TOKEN. Unset by default for the local demo. */
+const WRITE_TOKEN = import.meta.env.VITE_WRITE_TOKEN as string | undefined;
 
 export class ApiClientError extends Error {
   constructor(
@@ -31,10 +51,17 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { headers: { accept: "application/json" } });
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        accept: "application/json",
+        ...(WRITE_TOKEN ? { "x-handshake-write-token": WRITE_TOKEN } : {}),
+        ...(init?.body ? { "content-type": "application/json" } : {}),
+      },
+    });
   } catch {
     throw new ApiClientError(0, "API_UNREACHABLE", `Cannot reach the Handshake API at ${API_BASE_URL}.`);
   }
@@ -60,11 +87,43 @@ async function request<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   return parsed.data;
 }
 
+const post = <T>(path: string, schema: z.ZodType<T>, payload: unknown): Promise<T> =>
+  request(path, schema, { method: "POST", body: JSON.stringify(payload ?? {}) });
+
+export interface RunDealInput {
+  mandateId: string;
+  merchantAgentId: string;
+  hostileMerchant?: boolean;
+  fulfillment?: "DELIVERED" | "NOT_DELIVERED" | "NOT_AS_DESCRIBED";
+  misconfiguredAgent?: boolean;
+}
+
+export interface OpenDisputeInput {
+  claimType: "GOODS_NOT_RECEIVED" | "NOT_AS_DESCRIBED" | "UNAUTHORIZED_CHARGE" | "MANDATE_BREACH";
+  claim: string;
+  openedBy: "BUYER" | "MERCHANT";
+}
+
 export const api = {
   health: (): Promise<Health> => request("/health", HealthSchema),
   mandates: (): Promise<MandateList> => request("/api/mandates", MandateListSchema),
   ledger: (): Promise<LedgerList> => request("/api/ledger", LedgerListSchema),
+  deals: (): Promise<DealListResponse> => request("/api/deals", DealListResponseSchema),
+  agents: (): Promise<AgentTrustList> => request("/api/agents", AgentTrustListSchema),
   deal: (dealId: string): Promise<DealView> => request(`/api/deals/${encodeURIComponent(dealId)}`, DealViewSchema),
-  dispute: (disputeId: string): Promise<Dispute> =>
-    request(`/api/disputes/${encodeURIComponent(disputeId)}`, DisputeSchema),
+  runDeal: (input: RunDealInput): Promise<DealRunResponse> => post("/api/deals", DealRunResponseSchema, input),
+  resumeDeal: (dealId: string): Promise<DealRunResponse> =>
+    post(`/api/deals/${encodeURIComponent(dealId)}/resume`, DealRunResponseSchema, {}),
+  dispute: (disputeId: string): Promise<DisputeView> =>
+    request(`/api/disputes/${encodeURIComponent(disputeId)}`, DisputeViewSchema),
+  disputes: (): Promise<DisputeList> => request("/api/disputes", DisputeListSchema),
+  openDispute: (dealId: string, input: OpenDisputeInput): Promise<DisputeView> =>
+    post(`/api/deals/${encodeURIComponent(dealId)}/disputes`, DisputeViewSchema, input),
+  createMandate: (input: MandateCreateRequest): Promise<MandateView> =>
+    post("/api/mandates", MandateViewSchema, MandateCreateRequestSchema.parse(input)),
+  runDemo: (caseLabel: DemoCase): Promise<DemoRunResponse> =>
+    post("/api/demo/run", DemoRunResponseSchema, { case: caseLabel }),
+  resetDemo: (): Promise<DemoResetResponse> => post("/api/demo/reset", DemoResetResponseSchema, {}),
+  /** Full URL for the SSE stream; EventSource needs an absolute URL. */
+  eventsUrl: (dealId: string): string => `${API_BASE_URL}/api/deals/${encodeURIComponent(dealId)}/events`,
 };

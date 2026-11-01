@@ -31,7 +31,7 @@ export function DataGrid<T extends object>({
   onRowClicked?: (row: T) => void;
 }) {
   const defaultColDef = useMemo<ColDef<T>>(
-    () => ({ sortable: true, resizable: true, suppressHeaderMenuButton: true, minWidth: 96 }),
+    () => ({ sortable: true, resizable: true, filter: true, suppressHeaderMenuButton: true, minWidth: 96 }),
     [],
   );
 

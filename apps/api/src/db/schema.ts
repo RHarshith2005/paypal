@@ -2,7 +2,10 @@ import type {
   Attestation,
   DealReceiptBody,
   Dispute,
+  EvidencePacket,
   Fulfillment,
+  GuardDecision,
+  HandshakeResult,
   InjectionSignal,
   Mandate,
   Offer,
@@ -12,18 +15,19 @@ import type {
   Signature,
   TrustEvent,
 } from "@handshake/shared";
-import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const agentKindEnum = pgEnum("agent_kind", ["BUYER_AGENT", "MERCHANT_AGENT", "ARBITER"]);
 
 export const dealStatusEnum = pgEnum("deal_status", [
-  "VALIDATED",
-  "HANDSHAKING",
+  "CREATED",
+  "HANDSHAKE",
   "NEGOTIATING",
   "AGREED",
-  "PAYING",
-  "RECEIPTED",
-  "COMPLETED",
+  "PAID",
+  "RECEIPT_SIGNED",
+  "DISPUTED",
+  "RESOLVED",
   "FAILED",
 ]);
 
@@ -42,7 +46,10 @@ export const agents = pgTable(
     kind: agentKindEnum("kind").notNull(),
     displayName: text("display_name").notNull(),
     publicKey: jsonb("public_key").$type<PublicKey>().notNull(),
-    attestation: jsonb("attestation").$type<Attestation>().notNull(),
+    /** Key id the agent signs with; attestations reference it. */
+    keyId: text("key_id").notNull(),
+    /** Latest attestation issued to this agent (SIMULATED). History lives in `attestations`. */
+    attestation: jsonb("attestation").$type<Attestation>(),
     /** DEMO ONLY: Ed25519 private key. Production keeps this in a KMS/HSM. */
     privateKeyPkcs8: text("private_key_pkcs8").notNull(),
     createdAt: createdAt(),
@@ -96,6 +103,14 @@ export const deals = pgTable(
     agreedOffer: jsonb("agreed_offer").$type<Offer>(),
     policy: jsonb("policy").$type<PolicyCheck>(),
     payment: jsonb("payment").$type<Payment>(),
+    handshakeResult: jsonb("handshake_result").$type<HandshakeResult>(),
+    guardDecisions: jsonb("guard_decisions").$type<GuardDecision[]>().notNull().default([]),
+    /** DEMO: this deal ran with the MandateGuard deliberately bypassed. */
+    misconfiguredAgent: boolean("misconfigured_agent").notNull().default(false),
+    /** Persisted so a resumed run keeps the same merchant persona. */
+    hostileMerchant: boolean("hostile_merchant").notNull().default(false),
+    /** DELIVERED | NOT_DELIVERED | NOT_AS_DESCRIBED, consumed when the receipt is signed. */
+    fulfillmentIntent: text("fulfillment_intent").notNull().default("DELIVERED"),
     fulfillment: jsonb("fulfillment").$type<Fulfillment>(),
     injectionSignals: jsonb("injection_signals").$type<InjectionSignal[]>().notNull().default([]),
     failure: jsonb("failure").$type<{ ruleId: string; message: string }>(),
@@ -177,6 +192,80 @@ export const disputes = pgTable(
   (table) => [index("disputes_deal_idx").on(table.dealId), index("disputes_status_idx").on(table.status)],
 );
 
+/**
+ * DEMO ONLY keystore for the human principal's signing key. A production build
+ * keeps this in a wallet, an HSM or the user's device, never in the app database.
+ */
+export const principalKeys = pgTable("principal_keys", {
+  keyId: text("key_id").primaryKey(),
+  principalId: text("principal_id").notNull(),
+  publicKey: jsonb("public_key").$type<PublicKey>().notNull(),
+  privateKeyPkcs8: text("private_key_pkcs8").notNull(),
+  createdAt: createdAt(),
+});
+
+export const trustAnchorKeys = pgTable("trust_anchor_keys", {
+  keyId: text("key_id").primaryKey(),
+  publicKey: jsonb("public_key").$type<PublicKey>().notNull(),
+  /** DEMO ONLY: the anchor key is persisted so restarts can still verify issued attestations. */
+  privateKeyPkcs8: text("private_key_pkcs8").notNull(),
+  createdAt: createdAt(),
+});
+
+export const attestations = pgTable(
+  "attestations",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(),
+    subjectAgentId: text("subject_agent_id").notNull(),
+    body: jsonb("body").$type<Attestation>().notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+  },
+  (table) => [index("attestations_subject_idx").on(table.subjectAgentId)],
+);
+
+/** Handshake and mandate nonces are single-use; this table is the replay defence. */
+export const consumedNonces = pgTable("consumed_nonces", {
+  nonce: text("nonce").primaryKey(),
+  scope: text("scope").notNull(),
+  dealId: text("deal_id"),
+  usedAt: timestamp("used_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+});
+
+export const dealEvents = pgTable(
+  "deal_events",
+  {
+    id: text("id").primaryKey(),
+    dealId: text("deal_id")
+      .notNull()
+      .references(() => deals.id, { onDelete: "cascade" }),
+    seq: integer("seq").notNull(),
+    type: text("type").notNull(),
+    summary: text("summary").notNull(),
+    data: jsonb("data").$type<unknown>().notNull(),
+    at: timestamp("at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [uniqueIndex("deal_events_deal_seq_idx").on(table.dealId, table.seq)],
+);
+
+export const evidencePackets = pgTable(
+  "evidence_packets",
+  {
+    id: text("id").primaryKey(),
+    disputeId: text("dispute_id")
+      .notNull()
+      .references(() => disputes.id, { onDelete: "cascade" }),
+    dealId: text("deal_id")
+      .notNull()
+      .references(() => deals.id, { onDelete: "cascade" }),
+    packet: jsonb("packet").$type<EvidencePacket>().notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("evidence_packets_deal_idx").on(table.dealId)],
+);
+
 export const trustScores = pgTable("trust_scores", {
   agentId: text("agent_id")
     .primaryKey()
@@ -197,4 +286,13 @@ export const schema = {
   ledgerEntries,
   disputes,
   trustScores,
+  trustAnchorKeys,
+  principalKeys,
+  attestations,
+  consumedNonces,
+  dealEvents,
+  evidencePackets,
 };
+
+export type DealEventRow = typeof dealEvents.$inferSelect;
+export type DealEventInsert = typeof dealEvents.$inferInsert;

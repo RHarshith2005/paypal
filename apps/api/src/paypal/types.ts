@@ -99,6 +99,8 @@ export interface PaymentProvider {
   /** Optional because not every provider exposes dispute search. */
   listDisputes?(input?: ListDisputesInput): Promise<DisputeSummary[]>;
   capabilities(): PaymentCapabilities;
+  /** Present on wrappers that can change adapter at runtime (sandbox → mock). */
+  runtimeStatus?(): { fallback: boolean; reason: string | null };
 }
 
 export type { PaypalErrorKind };

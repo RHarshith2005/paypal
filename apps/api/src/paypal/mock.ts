@@ -75,7 +75,11 @@ export class MockPaymentProvider implements PaymentProvider {
       referenceId: input.referenceId,
     };
     this.orders.set(orderId, order);
-    this.remember(input.idempotencyKey, { op: "createOrder", amountMinor: input.amountMinor, referenceId: input.referenceId }, orderId);
+    this.remember(
+      input.idempotencyKey,
+      { op: "createOrder", amountMinor: input.amountMinor, referenceId: input.referenceId },
+      orderId,
+    );
     return this.orderView(order);
   }
 
@@ -100,7 +104,11 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   async refund(input: RefundInput): Promise<RefundReceipt> {
-    const existing = this.replay(input.idempotencyKey, { op: "refund", captureId: input.captureId, amountMinor: input.amountMinor ?? null });
+    const existing = this.replay(input.idempotencyKey, {
+      op: "refund",
+      captureId: input.captureId,
+      amountMinor: input.amountMinor ?? null,
+    });
     if (existing) {
       const order = [...this.orders.values()].find((candidate) => candidate.captureId === input.captureId);
       return {

@@ -26,6 +26,10 @@ export interface DisputeFacts {
   mandateValidAtCapture: boolean;
   agreement: Offer;
   fulfillment: Fulfillment | null;
+  /** Settled capture in minor units, when known. Used to detect partial captures. */
+  capturedMinor?: number;
+  /** Agreed price in minor units, when known. */
+  agreedMinor?: number;
 }
 
 export interface LiabilityDecision {

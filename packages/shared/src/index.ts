@@ -1,11 +1,15 @@
+export * from "./arbiter";
+export * from "./attestation";
+export * from "./browser-verify";
 export * from "./canonical";
 export * from "./chain";
+export * from "./deal-machine";
+export * from "./guard";
+export * from "./handshake";
+export * from "./injection";
 export * from "./liability";
 export * from "./mandate";
+export * from "./merchant-policy";
 export * from "./money";
-export * from "./nonce";
 export * from "./schemas";
 export * from "./trust";
-
-// Ed25519 signing lives in `@handshake/shared/crypto`: it imports `node:crypto`,
-// so it is deliberately excluded from this browser-safe barrel.

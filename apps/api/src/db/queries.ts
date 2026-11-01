@@ -1,11 +1,16 @@
 import {
+  DealEventSchema,
   DealSchema,
   DisputeSchema,
+  EvidencePacketSchema,
   HandshakeMessageSchema,
+  HandshakeResultSchema,
   LedgerEntrySchema,
   MandateSchema,
   NegotiationTurnSchema,
   DealReceiptSchema,
+  verifyChain,
+  type DealSummary,
   type DealView,
   type Dispute,
   type LedgerEntry,
@@ -18,7 +23,7 @@ import {
 import { desc, eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { schema as DatabaseSchema } from "./schema";
-import { deals, disputes, ledgerEntries, mandates, messages, receipts } from "./schema";
+import { dealEvents, deals, disputes, evidencePackets, ledgerEntries, mandates, messages, receipts } from "./schema";
 
 /** Drizzle's query builder is driver-agnostic; both node-postgres and PGlite share this shape. */
 export type Db = PgDatabase<PgQueryResultHKT, typeof DatabaseSchema>;
@@ -122,6 +127,30 @@ async function disputesForDeal(db: Db, dealId: string): Promise<Dispute[]> {
   );
 }
 
+export interface DisputeListRow {
+  id: string;
+  dealId: string;
+  mandateId: string;
+  caseLabel: "A" | "B" | null;
+}
+
+/** Disputes joined to their deal's mandate, so the court page can label the seeded cases. */
+export async function listDisputeRows(db: Db): Promise<DisputeListRow[]> {
+  const rows = await db
+    .select({ id: disputes.id, dealId: disputes.dealId, mandateId: deals.mandateId })
+    .from(disputes)
+    .innerJoin(deals, eq(disputes.dealId, deals.id))
+    .orderBy(desc(disputes.createdAt));
+
+  return rows.map((row) => ({
+    id: row.id,
+    dealId: row.dealId,
+    mandateId: row.mandateId,
+    caseLabel:
+      row.mandateId === "mnd_case_a" ? "A" : row.mandateId === "mnd_case_b" ? "B" : null,
+  }));
+}
+
 export async function getDispute(db: Db, disputeId: string): Promise<Dispute | null> {
   const [row] = await db.select().from(disputes).where(eq(disputes.id, disputeId)).limit(1);
   if (!row) return null;
@@ -138,14 +167,47 @@ export async function getDispute(db: Db, disputeId: string): Promise<Dispute | n
   });
 }
 
+export async function listDealSummaries(db: Db, limit = 20): Promise<DealSummary[]> {
+  const rows = await db.select({ id: deals.id }).from(deals).orderBy(desc(deals.createdAt)).limit(limit);
+  const summaries: DealSummary[] = [];
+  for (const row of rows) {
+    const view = await getDeal(db, row.id);
+    if (!view) continue;
+    const { deal } = view;
+    const amountMinor =
+      deal.receipt?.agreedPrice.amountMinor ?? deal.agreedOffer?.totalMinor ?? deal.payment?.amountMinor ?? 0;
+    const signatures = [deal.receipt?.buyerSignature, deal.receipt?.merchantSignature].filter(Boolean).length;
+    summaries.push({
+      id: deal.id,
+      mandateId: deal.mandateId,
+      merchantAgentId: deal.merchantAgentId,
+      merchantName:
+        deal.merchantAgentId === "agt_merchant_ridgeway" ? "Ridgeway Industrial Supply" : deal.merchantAgentId,
+      buyerAgentId: deal.buyerAgentId,
+      status: deal.status,
+      amountMinor,
+      currency: "USD",
+      paymentProvider: deal.payment?.provider ?? null,
+      simulatedPayment: deal.payment?.simulated ?? true,
+      signatures,
+      chainValid: verifyChain(deal.transcript).valid,
+      createdAt: deal.createdAt,
+      completedAt: deal.completedAt,
+    });
+  }
+  return summaries;
+}
+
 export async function getDeal(db: Db, dealId: string): Promise<DealView | null> {
   const [row] = await db.select().from(deals).where(eq(deals.id, dealId)).limit(1);
   if (!row) return null;
 
-  const [messageRows, receiptRows, disputeRows] = await Promise.all([
+  const [messageRows, receiptRows, disputeRows, eventRows, packetRows] = await Promise.all([
     db.select().from(messages).where(eq(messages.dealId, dealId)).orderBy(messages.seq),
     db.select().from(receipts).where(eq(receipts.dealId, dealId)).limit(1),
     disputesForDeal(db, dealId),
+    db.select().from(dealEvents).where(eq(dealEvents.dealId, dealId)).orderBy(dealEvents.seq),
+    db.select().from(evidencePackets).where(eq(evidencePackets.dealId, dealId)).orderBy(evidencePackets.createdAt),
   ]);
 
   const handshake = messageRows
@@ -194,6 +256,20 @@ export async function getDeal(db: Db, dealId: string): Promise<DealView | null> 
     policy: row.policy ?? null,
     payment: row.payment ?? null,
     receipt,
+    handshakeResult: row.handshakeResult ? HandshakeResultSchema.parse(row.handshakeResult) : null,
+    guardDecisions: row.guardDecisions.map((decision) => ({ ...decision })),
+    events: eventRows.map((event) =>
+      DealEventSchema.parse({
+        id: event.id,
+        seq: event.seq,
+        dealId: event.dealId,
+        type: event.type,
+        summary: event.summary,
+        data: event.data,
+        at: toIso(event.at),
+      }),
+    ),
+    misconfiguredAgent: row.misconfiguredAgent,
     transcript,
     injectionSignals: row.injectionSignals,
     fulfillment: row.fulfillment ?? null,
@@ -202,5 +278,10 @@ export async function getDeal(db: Db, dealId: string): Promise<DealView | null> 
     completedAt: row.completedAt ? toIso(row.completedAt) : null,
   });
 
-  return { deal, verification: null, disputes: disputeRows };
+  return {
+    deal,
+    verification: null,
+    disputes: disputeRows,
+    evidencePackets: packetRows.map((packet) => EvidencePacketSchema.parse(packet.packet)),
+  };
 }

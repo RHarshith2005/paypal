@@ -214,13 +214,119 @@ export function LinkButton({
   );
 }
 
+export function Button({
+  children,
+  onClick,
+  tone = "primary",
+  disabled = false,
+  type = "button",
+  className = "",
+  title,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  tone?: "primary" | "ghost" | "danger" | "amber";
+  disabled?: boolean;
+  type?: "button" | "submit";
+  className?: string;
+  title?: string;
+}) {
+  const tones = {
+    primary: "border-emerald-400/40 bg-emerald-400/12 text-emerald-100 hover:bg-emerald-400/20",
+    ghost: "border-white/12 bg-white/[0.03] text-zinc-200 hover:border-white/25 hover:text-white",
+    danger: "border-rose-400/40 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20",
+    amber: "border-amber-400/40 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20",
+  } as const;
+  return (
+    <button
+      type={type}
+      title={title}
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${tones[tone]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Horizontal meter used for budgets, trust scores and liability split. */
+export function Meter({
+  percent,
+  tone = "emerald",
+  label,
+  value,
+}: {
+  percent: number;
+  tone?: "emerald" | "amber" | "rose" | "sky";
+  label?: string;
+  value?: ReactNode;
+}) {
+  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+  const tones = {
+    emerald: "bg-gradient-to-r from-emerald-400 to-teal-300",
+    amber: "bg-gradient-to-r from-amber-400 to-orange-300",
+    rose: "bg-gradient-to-r from-rose-400 to-rose-300",
+    sky: "bg-gradient-to-r from-sky-400 to-cyan-300",
+  } as const;
+  return (
+    <div>
+      {(label || value) && (
+        <div className="mb-1.5 flex items-baseline justify-between gap-3">
+          {label && <span className="mono-label">{label}</span>}
+          {value && <span className="font-mono text-[11px] text-zinc-300">{value}</span>}
+        </div>
+      )}
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
+        <div
+          className={`h-full rounded-full ${tones[tone]}`}
+          style={{ width: `${clamped}%` }}
+          role="progressbar"
+          aria-valuenow={clamped}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={label ?? "progress"}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Inline notice with a tone; used for simulated labels and demo warnings. */
+export function Callout({
+  tone = "amber",
+  title,
+  children,
+}: {
+  tone?: "amber" | "rose" | "emerald" | "sky";
+  title: ReactNode;
+  children?: ReactNode;
+}) {
+  const tones = {
+    amber: "border-amber-400/30 bg-amber-400/5 text-amber-100",
+    rose: "border-rose-400/30 bg-rose-400/5 text-rose-100",
+    emerald: "border-emerald-400/30 bg-emerald-400/5 text-emerald-100",
+    sky: "border-sky-400/30 bg-sky-400/5 text-sky-100",
+  } as const;
+  return (
+    <div className={`rounded-xl border p-4 ${tones[tone]}`}>
+      <p className="flex flex-wrap items-center gap-2 text-sm font-medium">{title}</p>
+      {children && <div className="mt-1 text-xs leading-relaxed opacity-85">{children}</div>}
+    </div>
+  );
+}
+
 export function StatusPill({ status }: { status: string }) {
   const tone: Tone =
-    status === "COMPLETED" || status === "SETTLED" || status === "RULED"
+    status === "COMPLETED" ||
+    status === "SETTLED" ||
+    status === "RULED" ||
+    status === "RESOLVED" ||
+    status === "RECEIPT_SIGNED"
       ? "emerald"
       : status === "FAILED" || status === "VOIDED"
         ? "rose"
-        : status === "RESERVED" || status === "OPEN"
+        : status === "RESERVED" || status === "OPEN" || status === "DISPUTED" || status === "HANDSHAKE"
           ? "amber"
           : "sky";
   return (

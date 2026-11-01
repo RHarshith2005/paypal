@@ -9,7 +9,7 @@ import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
 import { Pool } from "pg";
 import { projectRoot, type AppConfig, type DatabaseDriver } from "../config/env";
-import { getDeal, getDispute, listLedgerEntries, listMandateViews, listMandates } from "./queries";
+import { getDeal, getDispute, listLedgerEntries, listMandateViews, listMandates, type Db } from "./queries";
 import { schema } from "./schema";
 
 export interface DatabasePing {
@@ -20,6 +20,11 @@ export interface DatabasePing {
 
 export interface Store {
   readonly driver: DatabaseDriver;
+  /**
+   * The Drizzle handle. Read paths go through the functions in this module; the
+   * deal pipeline writes through `db/writes.ts` so both drivers keep one shape.
+   */
+  readonly db: Db;
   ping(): Promise<DatabasePing>;
   close(): Promise<void>;
   listMandates(): Promise<Mandate[]>;
@@ -57,9 +62,10 @@ export async function createStore(config: AppConfig): Promise<Store> {
  * the store closes over the concrete instance and the rest of the app only sees
  * the Store interface. That keeps driver unions out of every repository call.
  */
-function makeStore(driver: DatabaseDriver, db: Parameters<typeof listMandates>[0], close: () => Promise<void>): Store {
+function makeStore(driver: DatabaseDriver, db: Db, close: () => Promise<void>): Store {
   return {
     driver,
+    db,
     async ping(): Promise<DatabasePing> {
       const startedAt = performance.now();
       try {

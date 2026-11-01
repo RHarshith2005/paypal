@@ -21,9 +21,9 @@ export type PaypalErrorKind = (typeof PAYPAL_ERROR_KINDS)[number];
 export interface PaypalErrorOptions {
   status?: number;
   /** PayPal's `issue` code, for example ORDER_ALREADY_CAPTURED. */
-  issue?: string;
-  debugId?: string;
-  paypalErrorName?: string;
+  issue?: string | null;
+  debugId?: string | null;
+  paypalErrorName?: string | null;
   retryable?: boolean;
   details?: unknown;
   cause?: unknown;

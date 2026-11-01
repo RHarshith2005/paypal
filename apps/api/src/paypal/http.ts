@@ -114,7 +114,6 @@ export class PaypalHttpClient {
 
     let attempt = 0;
     let refreshedToken = false;
-    let retryAfterMs: number | null = null;
 
     for (;;) {
       const token = await this.accessToken();
@@ -144,8 +143,7 @@ export class PaypalHttpClient {
         if (response.status >= 500) {
           const error = this.httpError(response.status, text);
           if (attempt < this.maxRetries) {
-            retryAfterMs = parseRetryAfter(response.headers.get("retry-after"));
-            await this.backoff(attempt, retryAfterMs);
+            await this.backoff(attempt, parseRetryAfter(response.headers.get("retry-after")));
             attempt += 1;
             continue;
           }

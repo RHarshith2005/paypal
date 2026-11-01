@@ -6,7 +6,10 @@ import { Badge, SimulatedTag } from "./ui";
 const NAV_ITEMS = [
   { to: "/", label: "Overview", end: true },
   { to: "/mandate", label: "Mandate", end: false },
+  { to: "/disputes", label: "Dispute court", end: true },
   { to: "/ledger", label: "Ledger", end: false },
+  { to: "/trust", label: "Trust", end: false },
+  { to: "/demo/script", label: "Demo script", end: false },
 ] as const;
 
 function BrandMark() {
@@ -29,7 +32,7 @@ function RuntimeStatus() {
 
   if (health.state.status === "loading") {
     return (
-      <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.02] p-3">
+      <div className="mt-5 rounded-xl border border-white/8 bg-white/[0.02] p-3">
         <p className="mono-label">Runtime</p>
         <p className="mt-1 text-xs text-zinc-400">Connecting to the API…</p>
       </div>
@@ -38,7 +41,7 @@ function RuntimeStatus() {
 
   if (health.state.status !== "success") {
     return (
-      <div className="mt-4 rounded-xl border border-rose-400/25 bg-rose-400/5 p-3">
+      <div className="mt-5 rounded-xl border border-rose-400/25 bg-rose-400/5 p-3">
         <p className="mono-label">Runtime</p>
         <p className="mt-1 text-xs text-rose-200">API offline</p>
         <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">Start it with `pnpm dev:api` on port 8787.</p>
@@ -46,23 +49,36 @@ function RuntimeStatus() {
     );
   }
 
-  const healthData = health.state.data;
+  const data = health.state.data;
   return (
-    <div className="mt-4 space-y-2 rounded-xl border border-white/8 bg-white/[0.02] p-3">
+    <div className="mt-5 space-y-2 rounded-xl border border-white/8 bg-white/[0.02] p-3">
       <p className="mono-label">Runtime</p>
       <div className="flex flex-wrap items-center gap-1.5">
-        <Badge tone={healthData.paypal.mode === "sandbox" ? "emerald" : "amber"}>PayPal {healthData.paypal.mode}</Badge>
-        <Badge tone={healthData.agents.runtime === "MODEL" ? "sky" : "amber"}>
-          {healthData.agents.runtime === "MODEL" ? "Model" : "Scripted"} agents
+        <Badge tone={data.paypal.mode === "sandbox" && !data.paypal.fallback ? "emerald" : "amber"}>
+          PayPal {data.paypal.fallback ? "mock fallback" : data.paypal.mode}
         </Badge>
-        <Badge tone="zinc" mono title={`Database driver: ${healthData.database.driver}`}>
-          db:{healthData.database.driver}
+        <Badge tone={data.agents.runtime === "MODEL" ? "sky" : "amber"}>
+          {data.agents.dialogue === "LIVE"
+            ? "Live model"
+            : data.agents.dialogue === "REPLAY"
+              ? "Replay"
+              : "Scripted"}
+        </Badge>
+        <Badge tone="zinc" mono title={`Database driver: ${data.database.driver}`}>
+          db:{data.database.driver}
         </Badge>
       </div>
-      <p className="font-mono text-[11px] text-zinc-500">{healthData.agents.model}</p>
-      {healthData.paypal.simulated && (
+      <p className="truncate font-mono text-[11px] text-zinc-500" title={data.agents.model}>
+        {data.agents.model}
+      </p>
+      {data.paypal.simulated && (
         <p className="flex items-center gap-1.5 text-[11px] text-amber-200/80">
           <SimulatedTag label="Mock payments" /> no funds move
+        </p>
+      )}
+      {data.paypal.fallback && (
+        <p className="text-[11px] leading-relaxed text-amber-200/80">
+          The sandbox was unreachable, so the labelled mock adapter took over for new orders.
         </p>
       )}
     </div>
@@ -72,8 +88,14 @@ function RuntimeStatus() {
 export function AppShell() {
   return (
     <div className="app-backdrop min-h-screen">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col lg:flex-row">
-        <aside className="border-b border-white/8 p-5 lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-emerald-400 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-black"
+      >
+        Skip to content
+      </a>
+      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col lg:flex-row">
+        <aside className="border-b border-white/8 p-5 lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex items-start gap-3">
             <BrandMark />
             <div>
@@ -82,14 +104,14 @@ export function AppShell() {
             </div>
           </div>
 
-          <nav className="mt-6 flex gap-1 overflow-x-auto lg:flex-col" aria-label="Primary">
+          <nav className="-mx-1 mt-5 flex gap-1 overflow-x-auto px-1 lg:flex-col" aria-label="Primary">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-2 text-xs font-medium transition ${
+                  `whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition ${
                     isActive
                       ? "bg-emerald-400/10 text-emerald-100"
                       : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
@@ -103,19 +125,21 @@ export function AppShell() {
 
           <RuntimeStatus />
 
-          <div className="mt-6 hidden border-t border-white/8 pt-4 lg:block">
+          <div className="mt-5 hidden border-t border-white/8 pt-4 lg:block">
             <p className="text-[11px] leading-relaxed text-zinc-500">
-              Agent identities and mock PayPal captures are labelled <span className="text-amber-200">SIMULATED</span>.
-              Mandate and receipt signatures are real Ed25519 signatures over canonical JSON.
+              Agent identities, the trust anchor catalogue and mock PayPal captures are labelled{" "}
+              <span className="text-amber-200">SIMULATED</span>. Mandate and receipt signatures are real Ed25519
+              signatures over canonical JSON.
             </p>
             <p className="mt-3 font-mono text-[10px] tracking-wide text-zinc-600">PayPal AI Hackathon 2026</p>
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 p-5 sm:p-8">
+        <main id="main" className="min-w-0 flex-1 p-5 sm:p-8">
           <Outlet />
-          <footer className="mt-10 border-t border-white/8 pt-4 text-[11px] text-zinc-600">
-            Handshake · open-source trust layer · mandate limits enforced in deterministic code
+          <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-white/8 pt-4 text-[11px] text-zinc-600">
+            <span>Handshake · open-source trust layer · mandate limits enforced in deterministic code</span>
+            <span className="font-mono">Ed25519 · SHA-256 · PayPal Orders v2</span>
           </footer>
         </main>
       </div>

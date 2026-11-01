@@ -4,6 +4,7 @@ import {
   EmptyState,
   ErrorPanel,
   KeyValue,
+  LinkButton,
   LoadingPanel,
   PageHeader,
   Panel,
@@ -134,6 +135,7 @@ export function MandatePage() {
         eyebrow="Spending authority"
         title="The mandate"
         description="A human principal signs the envelope their buyer agent must stay inside. The agent can choose how to negotiate; it cannot choose to exceed these limits."
+        actions={<LinkButton to="/mandate/new">Write a mandate</LinkButton>}
       />
 
       {mandates.state.status === "loading" && <LoadingPanel label="Loading signed mandates…" />}

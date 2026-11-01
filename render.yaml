@@ -1,0 +1,83 @@
+# Render blueprint: static web, API service, Postgres.
+#
+# Migrations are applied by the API on boot (`createStore` runs the Drizzle
+# migrator before any route is registered), so a deploy cannot serve traffic
+# against an unmigrated schema.
+#
+# Required secrets to set in the Render dashboard:
+#   handshake-web  VITE_API_BASE_URL   https://handshake-api.onrender.com
+#   handshake-api  WEB_ORIGIN          https://handshake-web.onrender.com
+#   handshake-api  ANTHROPIC_API_KEY   optional; unset = labelled scripted agents
+#   handshake-api  PAYPAL_CLIENT_ID    optional; unset = labelled mock payments
+#   handshake-api  PAYPAL_CLIENT_SECRET
+#   handshake-api  API_WRITE_TOKEN     recommended for a public instance
+
+services:
+  - type: web
+    name: handshake-api
+    runtime: node
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @handshake/api build
+    startCommand: pnpm --filter @handshake/api start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: handshake-db
+          property: connectionString
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: PAYPAL_API_BASE
+        value: https://api-m.sandbox.paypal.com
+      - key: LLM_MODE
+        value: live
+      - key: RATE_LIMIT_MAX
+        value: "120"
+      - key: WEB_ORIGIN
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5-5
+      - key: API_WRITE_TOKEN
+        sync: false
+      - key: VITE_WRITE_TOKEN
+        sync: false
+
+  - type: web
+    name: handshake-web
+    runtime: static
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @handshake/web build
+    staticPublishPath: ./apps/web/dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_BASE_URL
+        sync: false
+      - key: VITE_WRITE_TOKEN
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: handshake-db
+    plan: free
+    databaseName: handshake
+    user: handshake

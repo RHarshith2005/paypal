@@ -16,6 +16,10 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "db:generate": "pnpm --filter @handshake/api db:generate",
+    "paypal:smoke": "pnpm --filter @handshake/api paypal:smoke",
+    "demo:seed": "pnpm --filter @handshake/api seed",
+    "demo:reset": "pnpm --filter @handshake/api seed:reset",
+    "test:e2e": "playwright test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
