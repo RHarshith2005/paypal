@@ -1,10 +1,11 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Manrope", "Urbanist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
 
-  --color-ink-950: #05080e;
+  --color-ink-950: #050718;
   --color-ink-900: #080d15;
   --color-ink-850: #0b111b;
   --color-ink-800: #101826;
@@ -17,96 +18,285 @@
     height: 100%;
   }
 
+  html {
+    /* One CSS pixel is one reference pixel; the stage is scaled by transform. */
+    font-size: 16px;
+  }
+
   body {
-    background-color: var(--color-ink-950);
-    color: #e8edf5;
+    margin: 0;
+    overflow: hidden;
+    background-color: #050718;
+    color: #ffffff;
     font-family: var(--font-sans);
-    font-feature-settings: "cv05" 1, "ss03" 1;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-  }
-
-  ::selection {
-    background-color: rgb(52 211 153 / 0.26);
-  }
-
-  :focus-visible {
-    outline: 2px solid rgb(52 211 153 / 0.85);
-    outline-offset: 2px;
-    border-radius: 6px;
-  }
-
-  a {
-    color: inherit;
   }
 
   h1,
   h2,
   h3 {
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
   }
 
-  table {
-    font-variant-numeric: tabular-nums;
+  ::selection {
+    background-color: rgb(203 244 123 / 0.3);
+    color: #0b0b0b;
+  }
+
+  :focus-visible {
+    outline: 2px solid #cbf47b;
+    outline-offset: 3px;
+    border-radius: 10px;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }
 
-/* Calm technical backdrop: a faint grid plus two low-opacity light sources. */
-.app-backdrop {
+/* ---------------------------------------------------------------------------
+   Stage: backdrop → bezel → screen. Used by ?frame=1 (full 2212×1659 canvas).
+   --------------------------------------------------------------------------- */
+
+.hs-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: #cfc7de;
   background-image:
-    radial-gradient(1100px 520px at 12% -12%, rgb(16 185 129 / 0.1), transparent 62%),
-    radial-gradient(900px 480px at 96% -4%, rgb(56 189 248 / 0.06), transparent 58%),
-    linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
-  background-size:
-    auto,
-    auto,
-    56px 56px,
-    56px 56px;
+    radial-gradient(1200px 820px at 6% -6%, #c7b5d6 0%, rgba(199, 181, 214, 0) 62%),
+    radial-gradient(1050px 760px at 102% -4%, #e6e2f1 0%, rgba(230, 226, 241, 0) 58%),
+    radial-gradient(1150px 900px at -4% 104%, #b8a9d0 0%, rgba(184, 169, 208, 0) 62%),
+    radial-gradient(1250px 950px at 104% 102%, #8c98b8 0%, rgba(140, 152, 184, 0) 62%);
 }
+
+.hs-bezel {
+  position: absolute;
+  border-radius: 125px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 60px 140px -40px rgba(24, 20, 48, 0.45);
+}
+
+.hs-screen {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 100px;
+  background-color: #050718;
+  background-image:
+    radial-gradient(900px 720px at 88% 104%, #0c0f2e 0%, rgba(12, 15, 46, 0) 72%),
+    radial-gradient(700px 420px at 4% 2%, rgba(94, 221, 209, 0.06) 0%, rgba(94, 221, 209, 0) 68%);
+  isolation: isolate;
+}
+
+/* In-app surface: no bezel, fills the viewport, still a fixed reference surface. */
+.hs-screen-app {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 0;
+  background-color: #050718;
+  background-image:
+    radial-gradient(1100px 800px at 88% 104%, #0c0f2e 0%, rgba(12, 15, 46, 0) 72%),
+    radial-gradient(900px 520px at 2% 0%, rgba(94, 221, 209, 0.07) 0%, rgba(94, 221, 209, 0) 66%);
+}
+
+/* ---------------------------------------------------------------------------
+   Reference type scale
+   --------------------------------------------------------------------------- */
+
+.hs-h1 {
+  font-size: 72px;
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+.hs-card-title {
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.hs-display {
+  font-size: 80px;
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.hs-number {
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.hs-body {
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.hs-caption {
+  font-size: 22px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hs-nav-label {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.hs-chip {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.hs-mono {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.hs-on-lime {
+  color: #0b0b0b;
+}
+
+/* ---------------------------------------------------------------------------
+   Surfaces
+   --------------------------------------------------------------------------- */
+
+.hs-glass {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hs-tint-revenue {
+  background: #241f35;
+}
+
+.hs-tint-split {
+  background: #1e2032;
+}
+
+.hs-tint-ledger {
+  background: #1c1e30;
+}
+
+.hs-tint-rail {
+  background: #1f2135;
+}
+
+.hs-tint-income {
+  background: linear-gradient(135deg, #20323a 0%, #1b2a30 100%);
+}
+
+.hs-tint-expense {
+  background: linear-gradient(135deg, #2e1f30 0%, #271c2b 100%);
+}
+
+.hs-balance {
+  background: linear-gradient(115deg, #5eddd1 0%, #8fea9c 45%, #cbf47b 100%);
+}
+
+.hs-scroll {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+}
+
+.hs-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.hs-fade-bottom {
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+}
+
+/* The gooey button: shapes merge inside the filter, the label stays outside it. */
+.hs-goo {
+  filter: url("#hs-goo-filter");
+}
+
+/* ---------------------------------------------------------------------------
+   Legacy primitives — kept so the secondary screens stay on-system
+   --------------------------------------------------------------------------- */
 
 .panel {
-  border: 1px solid rgb(255 255 255 / 0.075);
-  background-color: rgb(8 13 21 / 0.82);
-  border-radius: 0.875rem;
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background-color: #1f2135;
+  border-radius: 32px;
 }
 
 .panel-flat {
-  border: 1px solid rgb(255 255 255 / 0.07);
-  background-color: rgb(255 255 255 / 0.018);
-  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 24px;
 }
 
 .mono-label {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgb(148 163 184);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .field {
   width: 100%;
-  border-radius: 0.625rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background-color: rgb(0 0 0 / 0.32);
-  padding: 0.5rem 0.7rem;
-  font-size: 0.8125rem;
-  color: #e8edf5;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.28);
+  padding: 8px 11px;
+  font-size: 13px;
+  color: #ffffff;
   font-family: var(--font-mono);
 }
 
+.hs-input {
+  width: 100%;
+  height: 62px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  padding: 0 18px;
+  color: #fff;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hs-input:focus {
+  outline: 2px solid rgba(203, 244, 123, 0.65);
+  outline-offset: 1px;
+}
+
 .field::placeholder {
-  color: rgb(113 113 122);
+  color: rgba(255, 255, 255, 0.32);
 }
 
 .field:hover {
-  border-color: rgb(255 255 255 / 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* --- Motion: only where it carries meaning ------------------------------- */
+/* Legacy translucent backdrop for pages outside the stage surface. */
+.app-backdrop {
+  background-color: #050718;
+}
+
+/* --- Motion: only where it carries meaning --------------------------------- */
 
 @keyframes stream-in {
   from {
@@ -122,14 +312,14 @@
 @keyframes verify-pop {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgb(52 211 153 / 0.4);
+    box-shadow: 0 0 0 0 rgb(203 244 123 / 0.4);
   }
   60% {
     transform: scale(1.02);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 12px rgb(52 211 153 / 0);
+    box-shadow: 0 0 0 12px rgb(203 244 123 / 0);
   }
 }
 

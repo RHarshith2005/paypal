@@ -178,7 +178,10 @@ export function MandateBuilderPage() {
                   onChange={(event) => setCategories(event.target.value)}
                   aria-describedby="categories-hint"
                 />
-                <span id="categories-hint" className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-500">
+                <span
+                  id="categories-hint"
+                  className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-500"
+                >
                   Comma separated.
                   {CATEGORY_SUGGESTIONS.map((category) => (
                     <button
@@ -263,14 +266,17 @@ export function MandateBuilderPage() {
             <Panel
               title={
                 <span className="flex flex-wrap items-center gap-2">
-                  Mandate signed <Badge tone="emerald" mono>{signed.mandate.id}</Badge>
+                  Mandate signed{" "}
+                  <Badge tone="emerald" mono>
+                    {signed.mandate.id}
+                  </Badge>
                 </span>
               }
               description="Read back from the database after signing — this is the stored envelope, not the form."
               actions={<SimulatedTag label="Simulated principal" />}
             >
               <Meter
-                percent={(signed.ledger.settledMinor + signed.ledger.reservedMinor) / signed.mandate.maxTotal * 100}
+                percent={((signed.ledger.settledMinor + signed.ledger.reservedMinor) / signed.mandate.maxTotal) * 100}
                 label="Budget committed"
                 value={`${formatUsd(signed.ledger.settledMinor + signed.ledger.reservedMinor)} / ${formatUsd(signed.mandate.maxTotal)}`}
               />
@@ -305,7 +311,7 @@ export function MandateBuilderPage() {
           >
             <div className="space-y-3">
               <Meter
-                percent={draft.perItemMax / Math.max(1, draft.maxTotal) * 100}
+                percent={(draft.perItemMax / Math.max(1, draft.maxTotal)) * 100}
                 label="Per-item cap as a share of the lifetime cap"
                 value={`${Math.round((draft.perItemMax / Math.max(1, draft.maxTotal)) * 100)}%`}
               />

@@ -314,6 +314,55 @@ sequenceDiagram
 
 ---
 
+## Design system
+
+The dashboard is authored against a 2212×1659 reference canvas: a dark glass
+screen inside a translucent bezel, on a lavender mesh backdrop.
+
+```bash
+pnpm dev                 # http://localhost:5173
+open /?frame=1           # the full 2212×1659 stage, 1:1
+pnpm design:diff         # screenshot the stage, diff it block by block
+```
+
+| Layer      | Where                         | Notes                                                        |
+| :--------- | :---------------------------- | :----------------------------------------------------------- |
+| Tokens     | `apps/web/tailwind.config.ts` | Reference spacing, type scale, radii, palette                |
+| Geometry   | `apps/web/src/ui/tokens.ts`   | Stage, bezel, screen, rail and card coordinates in ref px    |
+| Surfaces   | `apps/web/src/index.css`      | `.hs-glass`, tinted panels, balance gradient, stage backdrop |
+| Components | `apps/web/src/ui/`            | Nav pill, donut, bar flow, agent stack, money, drawer, stage |
+
+**Coordinates.** 1 rem is 16 ref px, so `p-28` is 28 ref px. Every card on the
+dashboard is placed at its reference offset (balance 155,419 829×450; rail
+1438,288 619×1205; gaps 23; side padding 45) and the screen clips at 1991×1415,
+which is why the deal list runs past the fold exactly as it does in the reference.
+
+**Two surfaces.** `?frame=1` renders the backdrop, bezel and screen; without it the
+screen fills the viewport. Both are the same fixed 1991×1415 surface scaled by
+transform, so a screenshot at 2212×1659 is 1:1 and nothing reflows between modes.
+
+**Comparing with the reference.** In dev, press <kbd>O</kbd> to overlay the reference
+with an opacity slider. `pnpm design:diff` screenshots the stage at 2212×1659 and
+runs pixelmatch per block (logo, nav, cards, rail), masking text regions. Drop the
+reference at `apps/web/public/design/reference.webp` to enable both.
+
+### What could not be matched
+
+- **The reference image is not in this repository.** Every prompt in the brief that
+  depends on it — the overlay, the pixel diff, “the image wins” — is wired but unrun.
+  Blocks and masks are keyed to the delivered coordinates; the first pass will need
+  real values from the image.
+- **Display type.** Plus Jakarta Sans is self-hosted at 400/500/600. Headings use 500
+  with −0.02em tracking, but a reference that uses a different optical size will not
+  match glyph for glyph.
+- **Key fingerprints.** The API does not expose agent public keys, so the agent card
+  shows the real key id from the most recent signed receipt (or `—`), not a hex
+  fingerprint of a key it never received.
+- **Zero-state colour.** Verdict segments with no cases render at zero rather than
+  being hidden, so the legend always shows all six verdicts honestly.
+- **`prefers-reduced-motion`** is honoured, so the diff script should be run with
+  reduced motion off; motion is otherwise off during the stage screenshot anyway.
+
 ## Verification you can perform
 
 <table>
@@ -439,15 +488,16 @@ handshake/
 
 ## Docs
 
-|                                          |                                                               |
-| :--------------------------------------- | :------------------------------------------------------------ |
-| [Architecture](docs/ARCHITECTURE.md)     | Modules, deal state machine, invariants, failure behaviour    |
-| [Security](SECURITY.md)                  | 12 threats with controls, authorisation gaps, simulated table |
-| [PayPal sandbox](docs/paypal-sandbox.md) | What was exercised, what was not                              |
-| [Channel3](docs/channel3.md)             | Why the catalog adapter is not wired                          |
-| [Devpost](docs/DEVPOST.md)               | Submission description                                        |
-| [Demo script](docs/DEMO_SCRIPT.md)       | Shot-by-shot 3:00 video with on-screen text                   |
-| [Submission assets](docs/SUBMISSION.md)  | Titles, pitches, judge testing instructions                   |
+|                                                |                                                               |
+| :--------------------------------------------- | :------------------------------------------------------------ |
+| [Architecture](docs/ARCHITECTURE.md)           | Modules, deal state machine, invariants, failure behaviour    |
+| [Security](SECURITY.md)                        | 12 threats with controls, authorisation gaps, simulated table |
+| [PayPal sandbox](docs/paypal-sandbox.md)       | What was exercised, what was not                              |
+| [Channel3](docs/channel3.md)                   | Why the catalog adapter is not wired                          |
+| [Devpost](docs/DEVPOST.md)                     | Submission description                                        |
+| [Demo script](docs/DEMO_SCRIPT.md)             | Shot-by-shot 3:00 video with on-screen text                   |
+| [Video prompt pack](docs/VIDEO_PROMPT_PACK.md) | Generated b-roll prompts, graded to the app's palette         |
+| [Submission assets](docs/SUBMISSION.md)        | Titles, pitches, judge testing instructions                   |
 
 ---
 

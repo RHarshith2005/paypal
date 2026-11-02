@@ -108,7 +108,14 @@ function DealDetail({ initial }: { initial: DealView }) {
 
       {deal.misconfiguredAgent && (
         <div className="mb-6">
-          <Callout tone="amber" title={<>Demo misconfiguration <SimulatedTag label="Guard bypassed" /></>}>
+          <Callout
+            tone="amber"
+            title={
+              <>
+                Demo misconfiguration <SimulatedTag label="Guard bypassed" />
+              </>
+            }
+          >
             This deal ran with the MandateGuard deliberately bypassed, reproducing Case B. The bypass is written to the
             transcript as <code className="font-mono">DEMO-BYPASS-00</code>, and every limit it skipped is listed in the
             guard decisions beside the negotiation.
@@ -146,7 +153,8 @@ function DealDetail({ initial }: { initial: DealView }) {
                           <p className="mono-label text-emerald-200/80">Buyer agent</p>
                           <p className="mt-1 text-xs leading-relaxed text-zinc-200">{round.buyer.message}</p>
                           <p className="mt-1.5 font-mono text-[10px] text-zinc-500">
-                            {round.buyer.kind} · {round.buyer.provenance === "MODEL" ? "model-authored" : "SIMULATED script"}
+                            {round.buyer.kind} ·{" "}
+                            {round.buyer.provenance === "MODEL" ? "model-authored" : "SIMULATED script"}
                           </p>
                         </div>
                       ) : (
@@ -164,8 +172,8 @@ function DealDetail({ initial }: { initial: DealView }) {
                           <p className="mono-label text-sky-200/80">Merchant agent</p>
                           <p className="mt-1 text-xs leading-relaxed text-zinc-200">{round.merchant.message}</p>
                           <p className="mt-1.5 font-mono text-[10px] text-zinc-500">
-                            {round.merchant.offer ? `${formatUsd(round.merchant.offer.totalMinor)} quote` : "no quote"} ·{" "}
-                            <span className="text-amber-200/70">untrusted input</span>
+                            {round.merchant.offer ? `${formatUsd(round.merchant.offer.totalMinor)} quote` : "no quote"}{" "}
+                            · <span className="text-amber-200/70">untrusted input</span>
                           </p>
                         </div>
                       ) : (
@@ -201,9 +209,7 @@ function DealDetail({ initial }: { initial: DealView }) {
                         <p className="mt-1 font-mono text-[10px] text-amber-200/80">{round.guard.bypassLabel}</p>
                       )}
                       {round.guard.reasonCodes.length > 0 && (
-                        <p className="mt-1 font-mono text-[10px] text-zinc-500">
-                          {round.guard.reasonCodes.join(", ")}
-                        </p>
+                        <p className="mt-1 font-mono text-[10px] text-zinc-500">{round.guard.reasonCodes.join(", ")}</p>
                       )}
                     </div>
                   )}
@@ -381,7 +387,10 @@ function DealDetail({ initial }: { initial: DealView }) {
           description="Each entry hashes its predecessor. Verify with the button above, or flip a byte on the ledger page to see the exact broken entry."
         >
           {deal.transcript.length === 0 ? (
-            <EmptyState title="No transcript" description="Handshake and negotiation messages appear here as they run." />
+            <EmptyState
+              title="No transcript"
+              description="Handshake and negotiation messages appear here as they run."
+            />
           ) : (
             <ol className="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
               {deal.transcript.map((entry) => (
@@ -441,9 +450,7 @@ function ReceiptPanel({ receipt, transcript }: { receipt: DealReceipt | null; tr
         </span>
       }
       description="Buyer and merchant signatures cover the same canonical receipt body. The Verify button recomputes the whole hash chain in your browser."
-      actions={
-        <Button onClick={() => setAudit(auditDealEvidence(receipt, transcript))}>Verify in browser</Button>
-      }
+      actions={<Button onClick={() => setAudit(auditDealEvidence(receipt, transcript))}>Verify in browser</Button>}
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <div>

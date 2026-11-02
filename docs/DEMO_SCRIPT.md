@@ -7,6 +7,11 @@ matches `/demo/script`, which also keeps a progress marker while you record.
 Keep the cursor calm: move, pause, click. Let the guard and the verdict text land
 before you talk over them.
 
+This is the cut. The generated b-roll that opens scenes, bridges routes and closes the
+film — with prompts graded to the app's palette — is in
+[`VIDEO_PROMPT_PACK.md`](VIDEO_PROMPT_PACK.md). Lay the screen recordings first; add
+the clips only where no real UI is on screen.
+
 ---
 
 ### 0:00 – 0:15 · Cold open

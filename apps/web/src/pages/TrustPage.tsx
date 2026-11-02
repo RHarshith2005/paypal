@@ -43,7 +43,7 @@ export function TrustPage() {
             <div>
               <p className="mono-label">Formula</p>
               <pre className="mt-2 rounded-lg border border-white/8 bg-black/30 p-3 font-mono text-[11px] leading-relaxed text-zinc-300">
-{`score = clamp(
+                {`score = clamp(
   base
   + min(positive_events, positive_cap)
   + max(negative_events, -negative_cap),
@@ -55,7 +55,10 @@ export function TrustPage() {
               <p className="mono-label">Deltas</p>
               <ul className="mt-2 space-y-1 text-[11px]">
                 {Object.entries(rows[0]?.formula.deltas ?? {}).map(([type, delta]) => (
-                  <li key={type} className="flex justify-between gap-3 rounded border border-white/6 bg-white/[0.02] px-2 py-1">
+                  <li
+                    key={type}
+                    className="flex justify-between gap-3 rounded border border-white/6 bg-white/[0.02] px-2 py-1"
+                  >
                     <span className="font-mono text-zinc-400">{type}</span>
                     <span className={delta > 0 ? "font-mono text-emerald-300" : "font-mono text-rose-300"}>
                       {delta > 0 ? `+${delta}` : delta}
@@ -113,7 +116,11 @@ function TrustCard({ agent }: { agent: AgentTrust }) {
           <span className="text-[11px] text-zinc-500">no events yet</span>
         ) : (
           Object.entries(counts).map(([type, count]) => (
-            <Badge key={type} tone={(agent.formula.deltas[type as keyof typeof agent.formula.deltas] ?? 0) > 0 ? "emerald" : "rose"} mono>
+            <Badge
+              key={type}
+              tone={(agent.formula.deltas[type as keyof typeof agent.formula.deltas] ?? 0) > 0 ? "emerald" : "rose"}
+              mono
+            >
               {type} ×{count}
             </Badge>
           ))

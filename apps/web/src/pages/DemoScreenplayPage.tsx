@@ -156,7 +156,8 @@ export function DemoScreenplayPage() {
             </Button>
           </div>
           <p className="mt-3 text-[11px] text-zinc-500">
-            Next up: <span className="text-zinc-300">{done >= BEATS.length ? "all beats recorded" : current?.title}</span>
+            Next up:{" "}
+            <span className="text-zinc-300">{done >= BEATS.length ? "all beats recorded" : current?.title}</span>
           </p>
         </Panel>
 
@@ -216,12 +217,12 @@ export function DemoScreenplayPage() {
                 <h2 className="text-sm font-semibold text-zinc-100">{beat.title}</h2>
                 {beat.cue && (
                   <span className="ml-auto">
-                    <Button
-                      tone="ghost"
-                      onClick={() => void cue(beat)}
-                      disabled={busy !== null}
-                    >
-                      {busy === beat.id ? "Working…" : beat.cue === "RESET" ? "Reset + open builder" : `Run Case ${beat.cue}`}
+                    <Button tone="ghost" onClick={() => void cue(beat)} disabled={busy !== null}>
+                      {busy === beat.id
+                        ? "Working…"
+                        : beat.cue === "RESET"
+                          ? "Reset + open builder"
+                          : `Run Case ${beat.cue}`}
                     </Button>
                   </span>
                 )}

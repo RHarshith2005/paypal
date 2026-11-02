@@ -91,7 +91,15 @@ export function DisputeCourtPage() {
   );
 }
 
-function CaseCard({ label, item, fallback }: { label: "A" | "B"; item: DisputeListItem | undefined; fallback: string }) {
+function CaseCard({
+  label,
+  item,
+  fallback,
+}: {
+  label: "A" | "B";
+  item: DisputeListItem | undefined;
+  fallback: string;
+}) {
   if (!item) {
     return (
       <Panel title={`Case ${label}`} description={fallback}>
@@ -180,7 +188,10 @@ function CaseCard({ label, item, fallback }: { label: "A" | "B"; item: DisputeLi
               )}
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {ruling.citations.slice(0, 8).map((citation) => (
-                  <code key={citation} className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
+                  <code
+                    key={citation}
+                    className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400"
+                  >
                     {citation}
                   </code>
                 ))}

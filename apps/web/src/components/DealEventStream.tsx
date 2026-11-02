@@ -37,7 +37,9 @@ export function DealEventStream({
         <span className="flex flex-wrap items-center gap-2">
           Live deal stream
           <Badge tone={status === "live" ? "emerald" : status === "offline" ? "amber" : "zinc"} mono>
-            <span className={status === "live" ? "live-dot mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-300" : ""} />
+            <span
+              className={status === "live" ? "live-dot mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-300" : ""}
+            />
             {status}
           </Badge>
         </span>

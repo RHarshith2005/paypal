@@ -1,10 +1,4 @@
-import {
-  formatUsd,
-  tamperedTranscript,
-  verifyChain,
-  type DealSummary,
-  type LedgerEntry,
-} from "@handshake/shared";
+import { formatUsd, tamperedTranscript, verifyChain, type DealSummary, type LedgerEntry } from "@handshake/shared";
 import type { ColDef } from "ag-grid-community";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -70,14 +64,8 @@ export function LedgerPage() {
   const [segment, setSegment] = useState<Segment>("none");
   const [auditId, setAuditId] = useState<string | null>(null);
 
-  const entries = useMemo(
-    () => (ledger.state.status === "success" ? ledger.state.data.entries : []),
-    [ledger.state],
-  );
-  const dealList = useMemo(
-    () => (deals.state.status === "success" ? deals.state.data.deals : []),
-    [deals.state],
-  );
+  const entries = useMemo(() => (ledger.state.status === "success" ? ledger.state.data.entries : []), [ledger.state]);
+  const dealList = useMemo(() => (deals.state.status === "success" ? deals.state.data.deals : []), [deals.state]);
 
   const groups = useMemo(() => {
     if (segment === "none") return [{ key: "All entries", rows: entries }];
@@ -86,9 +74,7 @@ export function LedgerPage() {
       const key = segment === "status" ? entry.status : shortHash(entry.mandateId, 24);
       map.set(key, [...(map.get(key) ?? []), entry]);
     }
-    return [...map.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, rows]) => ({ key, rows }));
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, rows]) => ({ key, rows }));
   }, [entries, segment]);
 
   const audited = dealList.find((deal) => deal.id === auditId) ?? dealList[0];
@@ -255,7 +241,9 @@ function IntegrityPanel({
                       <span className="ml-auto font-mono text-[10px] text-zinc-500">
                         {shortHash(entry.payloadHash, 18)}
                       </span>
-                      {broken && <span className="w-full font-mono text-[10px] text-rose-300">✕ {verification.reason}</span>}
+                      {broken && (
+                        <span className="w-full font-mono text-[10px] text-rose-300">✕ {verification.reason}</span>
+                      )}
                     </button>
                   </li>
                 );
@@ -266,7 +254,11 @@ function IntegrityPanel({
           <div className="space-y-3">
             <Callout
               tone={verification.valid ? "emerald" : "rose"}
-              title={verification.valid ? "Every entry hashes to its predecessor" : `First break: entry #${verification.brokenAt}`}
+              title={
+                verification.valid
+                  ? "Every entry hashes to its predecessor"
+                  : `First break: entry #${verification.brokenAt}`
+              }
             >
               {verification.valid
                 ? "The transcript root committed by the receipt still matches."
@@ -274,11 +266,7 @@ function IntegrityPanel({
             </Callout>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                tone="danger"
-                onClick={() => setTamperedIndex(selectedIndex)}
-                disabled={tamperedIndex !== null}
-              >
+              <Button tone="danger" onClick={() => setTamperedIndex(selectedIndex)} disabled={tamperedIndex !== null}>
                 Flip one byte in #{selectedIndex}
               </Button>
               <Button tone="ghost" onClick={() => setTamperedIndex(null)} disabled={tamperedIndex === null}>
@@ -291,9 +279,7 @@ function IntegrityPanel({
               <KeyValue label="Root">
                 <code className="font-mono text-[11px]">{shortHash(verification.root, 26)}</code>
               </KeyValue>
-              <KeyValue label="Tampered">
-                {tamperedIndex === null ? "none" : `entry #${tamperedIndex}`}
-              </KeyValue>
+              <KeyValue label="Tampered">{tamperedIndex === null ? "none" : `entry #${tamperedIndex}`}</KeyValue>
             </dl>
 
             <p className="text-[11px] leading-relaxed text-zinc-500">
