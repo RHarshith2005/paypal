@@ -99,7 +99,7 @@ keys. Nothing is hidden.
 **Automated proof**
 
 ```bash
-pnpm -r typecheck && pnpm lint && pnpm test   # 139 tests
+pnpm -r typecheck && pnpm lint && pnpm test   # 144 tests
 pnpm test:e2e                                 # Playwright: Case A and Case B
 ```
 
@@ -117,8 +117,8 @@ row; no funds move.
   mock payment adapter are **simulated**, and labelled in the UI.
 - Channel3 is **not integrated**: the documented contract could not be verified, so
   no endpoint was invented (`docs/channel3.md`).
-- PayPal dispute *creation* is not wired; the product ships its own dispute court.
-  Dispute *listing* is implemented against the documented API but was not exercised
+- PayPal dispute _creation_ is not wired; the product ships its own dispute court.
+  Dispute _listing_ is implemented against the documented API but was not exercised
   in sandbox (`docs/paypal-sandbox.md`).
 - There are no user accounts. `API_WRITE_TOKEN` is the only write control; see
   `SECURITY.md`.

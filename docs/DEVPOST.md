@@ -8,8 +8,8 @@ show a finance team that a human authorised the spend, prove to the merchant tha
 is a legitimate counterparty, or produce evidence both sides agree on when the deal
 goes wrong.
 
-We kept asking the same question during the hackathon: *if two agents made a deal
-and nobody was watching, what would you accept as proof?* Handshake is our answer —
+We kept asking the same question during the hackathon: _if two agents made a deal
+and nobody was watching, what would you accept as proof?_ Handshake is our answer —
 a signed mandate, a verified handshake, a real sandbox payment and a receipt either
 side can check without trusting the other.
 
@@ -95,7 +95,7 @@ entry, and a trust scoreboard that prints the formula it used.
   yet (a foreign-key failure); the insert order had to follow the dependency, not the
   narrative.
 - **Model output that is plausible and wrong.** The arbiter now validates against a
-  strict JSON schema *and* against the packet's evidence ids, and the deterministic
+  strict JSON schema _and_ against the packet's evidence ids, and the deterministic
   liability overrules the model. Which model, how many rounds, and how many tokens
   are all bounded.
 - **Telling the truth about the sandbox.** It would be easy to render a fake
@@ -105,7 +105,7 @@ entry, and a trust scoreboard that prints the formula it used.
 
 ## Accomplishments we are proud of
 
-- 139 unit and pipeline tests plus a Playwright suite that runs both cases through
+- 144 unit and pipeline tests plus a Playwright suite that runs both cases through
   the real UI and asserts the verdicts.
 - A browser verifier: flip a byte in the ledger and the UI names entry `#0` and the
   hash mismatch, with no server round trip.

@@ -82,7 +82,7 @@ amount. Do not scroll past the injection panel if it is visible.
 
 **On-screen text:** `PayPal Sandbox · idempotent · dual-signed`
 
-**Say:** “The cart settles through the PayPal adapapter with idempotency keys derived
+**Say:** “The cart settles through the PayPal adapter with idempotency keys derived
 from the deal id, after a ledger reservation so two deals can't overdraw one budget.
 Then both agents sign the receipt — cart, price, PayPal order and the transcript
 root.”
